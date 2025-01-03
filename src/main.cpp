@@ -10,8 +10,8 @@
 // every 10 seconds
 #define EXECUTION_STEP_INTERVAL (1 * 10 * 1000)
 
-#define WATER_LEVEL_PIN_1 5 // D1
-#define WATER_LEVEL_PIN_2 4 // D2
+#define WATER_LEVEL_PIN_1 14 // D5
+#define WATER_LEVEL_PIN_2 12 // D6
 #define WATER_LEVEL_INPUT A0
 
 WiFiClient wifiClient;
