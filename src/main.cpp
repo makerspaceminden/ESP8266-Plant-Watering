@@ -1,11 +1,12 @@
 #include <Arduino.h>
+#include <Wire.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
+#include <Adafruit_INA219.h>
 
 #include "config.h"
 #include "espMQTTpub.h"
 #include "espSimpleOTA.h"
-
 
 // every 10 seconds
 #define EXECUTION_STEP_INTERVAL (1 * 10 * 1000)
@@ -13,11 +14,14 @@
 #define WATER_LEVEL_PIN_1 14 // D5
 #define WATER_LEVEL_PIN_2 12 // D6
 #define WATER_LEVEL_INPUT A0
+#define SOIL_MOISTURE_SENSOR_READ_TIMES 20
+
+Adafruit_INA219 ina219;
+bool ina219Status = false;
 
 WiFiClient wifiClient;
 PubSubClient mqttClient(wifiClient);
 bool isConnected = false;
-uint32_t waterLevel = 0;
 
 uint32_t oldTime = 0;
 
@@ -49,34 +53,18 @@ int measureSoilMoisture()
 
 	return sum / (SOIL_MOISTURE_SENSOR_READ_TIMES * 2);
 }
-int measureSoilMoisture()
-{
-	int sum = 0;
 
-	for (int i = 0; i < SOIL_MOISTURE_SENSOR_READ_TIMES; i++)
-	{
-
-		digitalWrite(WATER_LEVEL_PIN_1, HIGH);
-		digitalWrite(WATER_LEVEL_PIN_2, LOW);
-		delayMicroseconds(25);
-		sum += analogRead(WATER_LEVEL_INPUT);
-
-		digitalWrite(WATER_LEVEL_PIN_1, LOW);
-		digitalWrite(WATER_LEVEL_PIN_2, HIGH);
-		delayMicroseconds(25);
-		sum += 1023 - analogRead(WATER_LEVEL_INPUT);
-	}
-
-	digitalWrite(WATER_LEVEL_PIN_1, LOW);
-	digitalWrite(WATER_LEVEL_PIN_2, LOW);
-
-	return sum / (SOIL_MOISTURE_SENSOR_READ_TIMES * 2);
-}
 void setup()
 {
 	// put your setup code here, to run once:
 	Serial.begin(115200);
 	Serial.println("Plant Watering");
+
+	ina219Status = ina219.begin();
+	if (!ina219Status)
+	{
+		Serial.println("Could not find a valid INA219 sensor, check wiring, address, sensor ID!");
+	}
 
 	pinMode(WATER_LEVEL_PIN_1, OUTPUT);
 	pinMode(WATER_LEVEL_PIN_2, OUTPUT);
@@ -119,7 +107,6 @@ void setup()
 
 	IPAddress subnet;
 
-	WiFi.mode(WIFI_STA);
 	if (subnet.fromString(SUBNET))
 	{
 		Serial.println(SUBNET);
@@ -133,21 +120,6 @@ void setup()
 	//WiFi.hostname(MQTT_ID);
 	// Configures static IP address
 	WiFi.mode(WIFI_STA);
-	{
-	Serial.print("IP address: ");
-		Serial.println(SUBNET);
-	}
-
-	//WiFi.hostname(MQTT_ID);
-	// Configures static IP address
-	WiFi.disconnect();
-	{
-		Serial.print("UnParsable IP");
-		Serial.println(SUBNET);
-	}
-
-	//WiFi.hostname(MQTT_ID);
-	// Configures static IP address
 	if (!WiFi.config(ip, dns, gateway, subnet))
 	{
 		Serial.println("STA Failed to configure");
@@ -183,6 +155,16 @@ void loop()
 		{
 		case 0:
 			espMQTTpub_PublishInt(ESPMQTTPUB_MQTT_TOPIC_WATER_LEVEL, measureSoilMoisture());
+			break;
+		case 1:
+			if (ina219Status)
+			{
+				espMQTTpub_PublishFloat(ESPMQTTPUB_MQTT_TOPIC_BATTERY_LEVEL, ina219.getBusVoltage_V() + (ina219.getShuntVoltage_mV() / 1000));
+			}
+			else
+			{
+				espMQTTpub_PublishFloat(ESPMQTTPUB_MQTT_TOPIC_BATTERY_LEVEL, -1);
+			}
 			break;
 		default:
 			// sleep
