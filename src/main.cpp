@@ -26,6 +26,52 @@ uint16_t counter = 0;
 // sleep about every 59 minutes a.k.a. 3,540,000,000 µs (59*60*1000*1000)
 uint64_t sleepTimeMicroSeconds = 3540000000UL;
 
+int measureSoilMoisture()
+{
+	int sum = 0;
+
+	for (int i = 0; i < SOIL_MOISTURE_SENSOR_READ_TIMES; i++)
+	{
+
+		digitalWrite(WATER_LEVEL_PIN_1, HIGH);
+		digitalWrite(WATER_LEVEL_PIN_2, LOW);
+		delayMicroseconds(25);
+		sum += analogRead(WATER_LEVEL_INPUT);
+
+		digitalWrite(WATER_LEVEL_PIN_1, LOW);
+		digitalWrite(WATER_LEVEL_PIN_2, HIGH);
+		delayMicroseconds(25);
+		sum += 1023 - analogRead(WATER_LEVEL_INPUT);
+	}
+
+	digitalWrite(WATER_LEVEL_PIN_1, LOW);
+	digitalWrite(WATER_LEVEL_PIN_2, LOW);
+
+	return sum / (SOIL_MOISTURE_SENSOR_READ_TIMES * 2);
+}
+int measureSoilMoisture()
+{
+	int sum = 0;
+
+	for (int i = 0; i < SOIL_MOISTURE_SENSOR_READ_TIMES; i++)
+	{
+
+		digitalWrite(WATER_LEVEL_PIN_1, HIGH);
+		digitalWrite(WATER_LEVEL_PIN_2, LOW);
+		delayMicroseconds(25);
+		sum += analogRead(WATER_LEVEL_INPUT);
+
+		digitalWrite(WATER_LEVEL_PIN_1, LOW);
+		digitalWrite(WATER_LEVEL_PIN_2, HIGH);
+		delayMicroseconds(25);
+		sum += 1023 - analogRead(WATER_LEVEL_INPUT);
+	}
+
+	digitalWrite(WATER_LEVEL_PIN_1, LOW);
+	digitalWrite(WATER_LEVEL_PIN_2, LOW);
+
+	return sum / (SOIL_MOISTURE_SENSOR_READ_TIMES * 2);
+}
 void setup()
 {
 	// put your setup code here, to run once:
@@ -106,32 +152,10 @@ void loop()
 		switch (counter)
 		{
 		case 0:
-			// D1 high D2 low
-			digitalWrite(WATER_LEVEL_PIN_1, HIGH);
-			digitalWrite(WATER_LEVEL_PIN_2, LOW);
-			break;
-		case 1:
-			// read sensor
-			waterLevel = analogRead(WATER_LEVEL_INPUT);
-			espMQTTpub_PublishInt(ESPMQTTPUB_MQTT_TOPIC_WATER_LEVEL, waterLevel);
-			/* code */
-			break;
-		case 2:
-			// D2 high D1 low
-			digitalWrite(WATER_LEVEL_PIN_1, LOW);
-			digitalWrite(WATER_LEVEL_PIN_2, HIGH);
-			break;
-		case 3:
-			// read sensor in reverse is 3.3v - value measured
-			waterLevel = analogRead(WATER_LEVEL_INPUT);
-			waterLevel = 1024 - waterLevel;
-			espMQTTpub_PublishInt(ESPMQTTPUB_MQTT_TOPIC_WATER_LEVEL, waterLevel);
-			/* code */
+			espMQTTpub_PublishInt(ESPMQTTPUB_MQTT_TOPIC_WATER_LEVEL, measureSoilMoisture());
 			break;
 		default:
-			// D1 low D2 low and sleep
-			digitalWrite(WATER_LEVEL_PIN_1, LOW);
-			digitalWrite(WATER_LEVEL_PIN_2, LOW);
+			// sleep
 			counter = -1;
 			ESP.deepSleep(3600000000UL);
 			break;
