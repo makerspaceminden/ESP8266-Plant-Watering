@@ -83,38 +83,67 @@ void setup()
 
 	IPAddress ip;
 
-	if (ip.fromString(IP_ADDRESS)) {
-			Serial.println(IP_ADDRESS);
-	} else {
-			Serial.print("UnParsable IP");
-			Serial.println(IP_ADDRESS);
+	if (ip.fromString(IP_ADDRESS))
+	{
+		Serial.println(IP_ADDRESS);
+	}
+	else
+	{
+		Serial.print("UnParsable IP");
+		Serial.println(IP_ADDRESS);
 	}
 
 	IPAddress dns;
 
-	if (ip.fromString(DNS)) {
-			Serial.println(DNS);
-	} else {
-			Serial.print("UnParsable IP");
-			Serial.println(DNS);
+	if (dns.fromString(DNS))
+	{
+		Serial.println(DNS);
+	}
+	else
+	{
+		Serial.print("UnParsable IP");
+		Serial.println(DNS);
 	}
 
 	IPAddress gateway;
 
-	if (ip.fromString(GATEWAY)) {
-			Serial.println(GATEWAY);
-	} else {
-			Serial.print("UnParsable IP");
-			Serial.println(GATEWAY);
+	if (gateway.fromString(GATEWAY))
+	{
+		Serial.println(GATEWAY);
+	}
+	else
+	{
+		Serial.print("UnParsable IP");
+		Serial.println(GATEWAY);
 	}
 
 	IPAddress subnet;
 
-	if (ip.fromString(SUBNET)) {
-			Serial.println(SUBNET);
-	} else {
-			Serial.print("UnParsable IP");
-			Serial.println(SUBNET);
+	WiFi.mode(WIFI_STA);
+	if (subnet.fromString(SUBNET))
+	{
+		Serial.println(SUBNET);
+	}
+	else
+	{
+		Serial.print("UnParsable IP");
+		Serial.println(SUBNET);
+	}
+
+	//WiFi.hostname(MQTT_ID);
+	// Configures static IP address
+	WiFi.mode(WIFI_STA);
+	{
+	Serial.print("IP address: ");
+		Serial.println(SUBNET);
+	}
+
+	//WiFi.hostname(MQTT_ID);
+	// Configures static IP address
+	WiFi.disconnect();
+	{
+		Serial.print("UnParsable IP");
+		Serial.println(SUBNET);
 	}
 
 	//WiFi.hostname(MQTT_ID);
@@ -124,6 +153,7 @@ void setup()
 		Serial.println("STA Failed to configure");
 	}
 
+	WiFi.disconnect();
 	Serial.print("Connecting to ");
 	Serial.println(WIFI_SSID);
 	WiFi.begin(WIFI_SSID, WIFI_PASS);
@@ -134,7 +164,7 @@ void setup()
 	}
 	Serial.println("");
 	Serial.println("WiFi connected.");
-	Serial.println("IP address: ");
+	Serial.print("IP address: ");
 	Serial.println(WiFi.localIP());
 
 	espMQTTpub_Init(&mqttClient);
